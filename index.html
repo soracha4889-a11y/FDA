@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สมุดฉลากยา</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500&family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: ช่องค้นหาทรงแคปซูลใหญ่ ผลลัพธ์เป็นการ์ดพับเปิด ในการ์ดแบ่งเป็นแท็บหมวด เห็นทีละหมวดให้ไม่รก */
+  :root {
+    --bg: #f7f3fb; --bg2: #efe6f7; --card: #ffffff; --ink: #2c1f3d; --muted: #6d6182;
+    --line: #e5d9ef; --accent: #6b3fa0; --accent-ink: #ffffff; --soft: #f3ecfa;
+    --gold: #94681a; --gold-soft: #fbf3e1; --warn: #a8321c; --warn-soft: #fdeeea;
+    --shadow: 0 10px 30px rgba(80, 40, 120, .10);
+    --font-head: "Mitr", "Noto Sans Thai", system-ui, sans-serif;
+    --font-body: "Noto Sans Thai", system-ui, sans-serif;
+    --scale: 1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #170f22; --bg2: #1f1530; --card: #211631; --ink: #f2ebf9; --muted: #b6a8c9;
+      --line: #3a2b52; --accent: #c9a6ff; --accent-ink: #1b1030; --soft: #2a1c40;
+      --gold: #e3bd6c; --gold-soft: #2f2514; --warn: #ff9f86; --warn-soft: #351b1b;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { font-size: calc(17px * var(--scale)); }
+  body {
+    margin: 0; color: var(--ink); font-family: var(--font-body); line-height: 1.85;
+    background: linear-gradient(180deg, var(--bg2) 0, var(--bg) 340px) var(--bg);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 28px 0 72px; }
+  button { font-family: inherit; }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* หัวหน้า */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand svg { flex: none; width: 52px; height: 52px; }
+  h1 { font: 500 1.7rem/1.2 var(--font-head); margin: 0; }
+  .tag { color: var(--gold); font-size: .85rem; letter-spacing: .12em; }
+  .size { display: flex; gap: 6px; flex: none; }
+  .size button { width: 42px; height: 42px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); font: 500 1rem var(--font-head); cursor: pointer; }
+  .lead { margin: 18px 0 20px; color: var(--muted); }
+
+  /* ค้นหา */
+  .search { display: flex; gap: 8px; padding: 8px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 999px; box-shadow: var(--shadow); }
+  .search input { flex: 1 1 auto; min-width: 0; border: 0; background: transparent; color: var(--ink);
+    font: inherit; font-size: 1.05rem; padding: 10px 16px; outline: none; }
+  .search:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .search button { flex: none; border: 0; border-radius: 999px; padding: 0 26px; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); font: 500 1.05rem var(--font-head); }
+  .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+  .chips > span { color: var(--muted); font-size: .9rem; }
+  .chip { border: 1px solid var(--line); background: var(--card); color: var(--accent); cursor: pointer;
+    border-radius: 999px; padding: 4px 14px; font: 500 .9rem var(--font-body); }
+  .chip:hover { background: var(--soft); }
+
+  /* ข้อมูลผู้ใช้ยา (พับเก็บ) */
+  .who { margin-top: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+  .who > summary { cursor: pointer; padding: 10px 16px; color: var(--muted); font-size: .92rem; list-style: none; }
+  .who > summary::-webkit-details-marker { display: none; }
+  .who[open] > summary { border-bottom: 1px solid var(--line); }
+  .whobody { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 12px 16px; }
+  .whobody label { display: flex; align-items: center; gap: 8px; }
+  .whobody input, .whobody select { padding: 8px 10px; font: inherit; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--bg); color: var(--ink); }
+  .whobody input { width: 6.5rem; }
+  .whobody input:focus-visible, .whobody select:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+  #status { margin: 26px 0 8px; color: var(--muted); min-height: 1.5em; }
+  .empty { text-align: center; padding: 34px 20px; background: var(--card); border: 1px dashed var(--line);
+    border-radius: 20px; color: var(--muted); }
+  .empty svg { width: 64px; height: 64px; margin-bottom: 6px; }
+
+  /* การ์ดยา */
+  .item { background: var(--card); border: 1px solid var(--line); border-radius: 20px; margin: 14px 0;
+    box-shadow: var(--shadow); overflow: hidden; }
+  .item > summary { list-style: none; cursor: pointer; padding: 18px 20px; display: flex; gap: 14px; align-items: flex-start; }
+  .item > summary::-webkit-details-marker { display: none; }
+  .item > summary::after { content: "＋"; margin-left: auto; color: var(--gold); font-size: 1.3rem; line-height: 1.2; flex: none; }
+  .item[open] > summary::after { content: "－"; }
+  .item[open] > summary { border-bottom: 1px solid var(--line); background: var(--soft); }
+  .sum { min-width: 0; }
+  .name { font: 500 1.25rem/1.35 var(--font-head); overflow-wrap: anywhere; }
+  .generic { color: var(--muted); overflow-wrap: anywhere; }
+  .tags, .minis { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag-pill { font-size: .8rem; padding: 1px 12px; border-radius: 999px; background: var(--gold-soft); color: var(--gold); border: 1px solid var(--line); }
+  .mini { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--warn-soft); color: var(--warn); }
+  .body { padding: 8px 20px 24px; }
+
+  /* แท็บหมวด */
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 14px; }
+  .tbtn { border: 1px solid var(--accent); background: var(--card); color: var(--accent); border-radius: 999px;
+    padding: 3px 16px; font: 500 .92rem var(--font-body); cursor: pointer; }
+  .tbtn:disabled { opacity: .6; cursor: wait; }
+  .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 10px; scrollbar-width: thin; }
+  .tab { flex: none; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px;
+    padding: 6px 18px; font: 500 .95rem var(--font-body); cursor: pointer; white-space: nowrap; }
+  .tab:hover { background: var(--soft); }
+  .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  /* เนื้อหาในแท็บ */
+  .ph { margin: 22px 0 8px; font: 500 1.05rem var(--font-head); color: var(--accent); }
+  .panel > .ph:first-child { margin-top: 8px; }
+  .panel p { margin: 6px 0; overflow-wrap: anywhere; white-space: pre-line; }
+  .muted { color: var(--muted); }
+  .hint { display: block; margin-top: 14px; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+  .row { margin-top: 12px; }
+  .row b { display: block; font: 500 .9rem var(--font-head); color: var(--gold); }
+  .dline { padding: 4px 10px; border-radius: 10px; }
+  .dline.hit { background: var(--gold-soft); outline: 2px solid var(--gold); font-weight: 500; }
+  .pill { display: inline-block; font-size: .9rem; font-weight: 500; padding: 1px 14px; border-radius: 999px; background: var(--soft); color: var(--accent); }
+  .pill.rx { background: var(--warn-soft); color: var(--warn); }
+  .grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .badge { display: flex; align-items: center; gap: 10px; background: var(--warn-soft); color: var(--warn);
+    border-radius: 16px; padding: 8px 16px 8px 8px; font-weight: 500; font-size: .95rem; line-height: 1.4; }
+  .badge .ic { width: 42px; height: 42px; border-radius: 50%; background: var(--card); display: grid; place-items: center; flex: none; }
+  .badge svg, .mini svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .badge svg { width: 26px; height: 26px; }
+  .mini svg { width: 18px; height: 18px; }
+  .sec { margin-top: 18px; }
+  .sec.warn { background: var(--warn-soft); border-radius: 14px; padding: 10px 16px 12px; }
+  .label { display: inline-block; font: 500 .95rem var(--font-head); color: var(--accent); }
+  .sec.warn .label { color: var(--warn); }
+  .more { border: 0; background: none; color: var(--accent); cursor: pointer; font: 500 .95rem var(--font-body); padding: 2px 0; text-decoration: underline; }
+  .sos { font-weight: 500; color: var(--warn); }
+  .mine { margin: 8px 0 12px; padding: 12px 14px; border-radius: 14px; background: var(--gold-soft); }
+  .mine h4 { margin: 0 0 4px; font: 500 1rem var(--font-head); color: var(--gold); }
+  .mrow { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .fact { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 1px 12px; font-size: .88rem; }
+  .fact.ask { background: var(--warn-soft); color: var(--warn); border-color: transparent; font-weight: 500; }
+  .calc { font-weight: 500; }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+  .btn { display: inline-block; text-decoration: none; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 6px 20px; font-weight: 500; }
+  .btn.alt { background: var(--card); color: var(--accent); border: 1px solid var(--accent); }
+  .tips { margin: 6px 0 0; padding-left: 1.3em; }
+  .tips li { margin: 4px 0; }
+
+  .note { margin-top: 34px; padding: 14px 18px; border-radius: 16px; background: var(--gold-soft); color: var(--muted); font-size: .88rem; line-height: 1.7; }
+  .note b { color: var(--gold); }
+  @media (max-width: 480px) { .search button { padding: 0 18px; } h1 { font-size: 1.45rem; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .chip, .search button, .tab { transition: background .15s ease, transform .15s ease; }
+    .search button:hover { transform: translateY(-1px); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <g transform="rotate(-35 32 32)">
+          <rect x="6" y="20" width="52" height="24" rx="12" fill="var(--soft)" stroke="var(--accent)" stroke-width="3"/>
+          <path d="M32 20h14a12 12 0 0 1 0 24H32z" fill="var(--accent)"/>
+          <rect x="12" y="25" width="10" height="4" rx="2" fill="var(--card)"/>
+        </g>
+        <path d="M52 8l1.8 4.2L58 14l-4.2 1.8L52 20l-1.8-4.2L46 14l4.2-1.8z" fill="var(--gold)"/>
+      </svg>
+      <div>
+        <h1>สมุดฉลากยา</h1>
+        <div class="tag">✦ DRUG LABEL · openFDA</div>
+      </div>
+    </div>
+    <div class="size" role="group" aria-label="ปรับขนาดตัวอักษร">
+      <button type="button" id="smaller" aria-label="ลดขนาดตัวอักษร">ก-</button>
+      <button type="button" id="bigger" aria-label="เพิ่มขนาดตัวอักษร">ก+</button>
+    </div>
+  </div>
+
+  <p class="lead">พิมพ์ชื่อยาเป็นภาษาอังกฤษ แล้วเลือกอ่านทีละหมวดจากฉลากของสำนักงานอาหารและยาสหรัฐฯ (FDA)</p>
+
+  <form id="f" class="search" role="search">
+    <input id="q" type="search" placeholder="เช่น ibuprofen หรือ Tylenol" aria-label="ชื่อยา" autocomplete="off" required>
+    <button type="submit">ค้นหา</button>
+  </form>
+
+  <div class="chips">
+    <span>ลองกดดู</span>
+    <button type="button" class="chip" data-q="acetaminophen">acetaminophen</button>
+    <button type="button" class="chip" data-q="ibuprofen">ibuprofen</button>
+    <button type="button" class="chip" data-q="loratadine">loratadine</button>
+    <button type="button" class="chip" data-q="omeprazole">omeprazole</button>
+  </div>
+
+  <details class="who">
+    <summary>✦ กรอกอายุ น้ำหนัก เพศ (ไม่บังคับ) เพื่อดูขนาดยาที่ตรงกับคุณ</summary>
+    <div class="whobody">
+      <label for="age">อายุ <input id="age" type="number" min="0" max="120" step="1" inputmode="decimal"> ปี</label>
+      <label for="wt">น้ำหนัก <input id="wt" type="number" min="0" max="300" step="0.1" inputmode="decimal"> กก.</label>
+      <label for="sex">เพศ <select id="sex"><option value="">ไม่ระบุ</option><option value="m">ชาย</option><option value="f">หญิง</option></select></label>
+    </div>
+  </details>
+
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="results">
+    <div class="empty">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <g transform="rotate(-35 32 32)">
+          <rect x="6" y="20" width="52" height="24" rx="12" fill="var(--soft)" stroke="var(--line)" stroke-width="3"/>
+          <path d="M32 20h14a12 12 0 0 1 0 24H32z" fill="var(--line)"/>
+        </g>
+      </svg>
+      <div>ยังไม่ได้ค้นหา<br>ลองพิมพ์ชื่อยาด้านบน หรือกดชื่อยาตัวอย่างได้เลย</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>โปรดทราบ</b> ข้อมูลนี้เป็นฉลากยาตามที่ยื่นต่อ FDA สหรัฐฯ อาจต่างจากยาที่จำหน่ายในประเทศไทย
+    ใช้เพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำทางการแพทย์ กรุณาปรึกษาแพทย์หรือเภสัชกรก่อนใช้ยา
+    เนื้อหาฉลากเป็นภาษาอังกฤษตามต้นฉบับ
+  </div>
+</div>
+
+<script>
+  // ---------- ค่าคงที่ ----------
+  var LIMIT = 900;
+  var WARN_FIELDS = ["boxed_warning", "warnings", "do_not_use", "contraindications", "ask_doctor", "ask_doctor_or_pharmacist", "stop_use", "when_using"];
+  var IX_FIELDS = ["drug_interactions", "ask_doctor_or_pharmacist", "do_not_use", "ask_doctor", "warnings", "contraindications", "stop_use"];
+  // [field, หัวข้อ, เป็นคำเตือนสำคัญหรือไม่]
+  var WARN_SECTIONS = [
+    ["boxed_warning", "คำเตือนสำคัญ", true], ["do_not_use", "ห้ามใช้เมื่อ", true],
+    ["contraindications", "ข้อห้ามใช้", true], ["warnings", "ข้อควรระวัง", true],
+    ["stop_use", "หยุดใช้และปรึกษาแพทย์เมื่อ", true], ["ask_doctor", "ปรึกษาแพทย์ก่อนใช้เมื่อ", false],
+    ["ask_doctor_or_pharmacist", "ปรึกษาแพทย์หรือเภสัชกรก่อนใช้เมื่อ", false], ["when_using", "ขณะใช้ยา", false]
+  ];
+  var FULL_SECTIONS = [
+    ["purpose", "ใช้เพื่ออะไร"], ["indications_and_usage", "ข้อบ่งใช้"], ["dosage_and_administration", "ขนาดและวิธีใช้"],
+    ["drug_interactions", "ปฏิกิริยากับยาอื่น"], ["overdosage", "ใช้เกินขนาด"], ["adverse_reactions", "อาการไม่พึงประสงค์"],
+    ["active_ingredient", "ตัวยาสำคัญ"], ["inactive_ingredient", "ส่วนประกอบอื่น"], ["storage_and_handling", "การเก็บรักษา"]
+  ];
+
+  // ไอคอนข้อระวัง (SVG ในไฟล์ ไม่โหลดรูปจากเว็บ)
+  var ICONS = {
+    pregnant: '<circle cx="12" cy="5" r="2.5"/><path d="M11 9.5c-1.8 2.2-1.8 5 .2 7V21M13 9.5c3 1.5 3.5 5 1 7.5l-.5 4"/>',
+    child: '<circle cx="12" cy="7" r="3"/><path d="M7 20v-3.5a5 5 0 0 1 10 0V20"/>',
+    liver: '<path d="M3 11c0-3 4-5 9-5 5 0 9 2 9 6 0 4-5 6-9 6-3 0-5-1-7-3z"/><path d="M12 6v6"/>',
+    kidney: '<path d="M15 4c3.5 1 5 5 4 9s-4 7-7 7c-3 0-4.5-3-3.5-5.5S13 11 13 8c0-2-1-3 2-4z"/>',
+    stomach: '<path d="M8 4v5c0 3-4 3-4 7a5 5 0 0 0 10 0c0-3-2-3-2-6V4"/>',
+    bleed: '<path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/>',
+    alcohol: '<path d="M6 4h12l-6 8z"/><path d="M12 12v7M8 20h8"/>',
+    allergy: '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r=".8"/><circle cx="14.5" cy="9" r=".8"/><circle cx="12" cy="14.5" r=".8"/><circle cx="16" cy="14" r=".8"/>',
+    drowsy: '<path d="M20 14a8 8 0 1 1-9-10 6 6 0 0 0 9 10z"/>',
+    heart: '<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>',
+    dose: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.01"/>',
+    mix: '<path d="M10.5 4.5a4 4 0 0 1 6 6l-6 6a4 4 0 0 1-6-6z"/><path d="M8 8l6 6"/>'
+  };
+  var RULES = [
+    ["pregnant", "ตั้งครรภ์ / ให้นมบุตร", /pregnan|breast-?feed|nursing/i],
+    ["child", "เด็ก", /child|infant|pediatric|under (6|12|18) years/i],
+    ["liver", "ตับ", /liver|hepat/i],
+    ["kidney", "ไต", /kidney|renal/i],
+    ["stomach", "กระเพาะอาหาร", /stomach|ulcer|gastro/i],
+    ["bleed", "เลือดออกง่าย", /bleed|blood thinner|anticoagul/i],
+    ["alcohol", "แอลกอฮอล์", /alcohol/i],
+    ["allergy", "แพ้ยา / ผื่น", /allerg|hypersensitiv|anaphyla|hives|rash|stevens/i],
+    ["drowsy", "ง่วงซึม / ระวังขับรถ", /drows|sleepy|sedat|operating (a )?(motor|machin|car)|driv/i],
+    ["heart", "หัวใจ / ความดัน", /heart|cardio|stroke|blood pressure|hypertens/i],
+    ["dose", "ห้ามใช้เกินขนาด", /overdos|more than (directed|the recommended)|do not (take|use) more|exceed/i],
+    ["mix", "ระวังยาอื่นที่ใช้ร่วม", /other (drugs|medicines|products)|warfarin|maoi|prescription drug/i]
+  ];
+  // กลุ่มยา/สิ่งที่ฉลากเตือนไม่ให้ใช้ร่วมกัน
+  var IX_RULES = [
+    ["ยาละลายลิ่มเลือด (เช่น warfarin)", /warfarin|blood thinner|anticoagul/i],
+    ["ยาต้านซึมเศร้ากลุ่ม MAOI", /maoi|monoamine oxidase/i],
+    ["ยาต้านซึมเศร้ากลุ่มอื่น", /ssri|antidepress|serotonin/i],
+    ["ยาแก้ปวดลดไข้อื่นๆ / แอสไพริน (NSAIDs)", /nsaid|aspirin|ibuprofen|naproxen|ketoprofen|other pain relie|fever reducer/i],
+    ["ยาที่มีพาราเซตามอลอยู่แล้ว", /acetaminophen|paracetamol/i],
+    ["ยาขับปัสสาวะ", /diuretic|water pill/i],
+    ["ยาลดความดัน", /ace inhibitor|angiotensin|beta.?blocker|blood pressure (medic|drug|pill)/i],
+    ["ยานอนหลับ / ยาระงับประสาท / ยากลุ่มโอปิออยด์", /sedative|tranquiliz|sleeping|benzodiazep|opioid|narcotic|cns depress/i],
+    ["สเตียรอยด์", /corticosteroid|steroid|prednis/i],
+    ["ยาเบาหวาน", /diabet|insulin|sulfonylurea|metformin/i],
+    ["ยาปฏิชีวนะ / ยาต้านเชื้อรา", /antibiotic|antifungal|macrolide|ketoconazole|erythromycin|clarithromycin/i],
+    ["ยากันชัก", /anticonvulsant|carbamazepine|phenytoin|barbiturate/i],
+    ["ยาเฉพาะทาง (lithium, methotrexate, digoxin ฯลฯ)", /lithium|methotrexate|digoxin|cyclosporin/i],
+    ["สมุนไพร / อาหารเสริม", /herbal|supplement|st\.? john/i],
+    ["เครื่องดื่มแอลกอฮอล์", /alcohol/i],
+    ["เกรปฟรุต", /grapefruit/i]
+  ];
+  var IX_LINE = /taking|other (drugs|medicines|medications|products)|interact|concomitant|together|combin|with (any )?other/i;
+  var TIMING = /with (a )?(food|meal)|after (a )?meals?|before (a )?meals?|empty stomach|bedtime|at night|in the (morning|evening)|every \d+\s*(?:to|-|–)?\s*\d*\s*hours?|\bonce (a )?(day|daily)|twice (a )?(day|daily)|\bdaily\b|full glass of water|swallow whole|not more than|do not (take|use) more|maximum/i;
+  var OD_HINT = /overdos|poison control|liver damage|severe .{0,40}damage|emergency/i;
+
+  var UNIT = "(?:tablets?|caplets?|capsules?|softgels?|teaspoons?|tsp|tablespoons?|ml|puffs?|drops?|sprays?)";
+  var AMOUNT_RE = new RegExp("(\\d+(?:\\.\\d+)?(?:\\s*(?:to|-|–)\\s*\\d+(?:\\.\\d+)?)?)\\s*(" + UNIT + ")\\b", "i");
+  var FREQ_RE = /(every\s+\d+(?:\s*(?:to|-|–)\s*\d+)?\s*hours?|(?:once|twice)\s+(?:a\s+)?(?:day|daily)|\d+\s*times\s*(?:a|per)\s*day)/i;
+  var LIMIT_RE = /((?:do not (?:take|use|exceed)|not more than|maximum|max\.?)[^.;]{0,120})/i;
+  var ASK_RE = /ask a doctor|consult (?:a|your) (?:doctor|physician)|talk to (?:a|your) doctor/i;
+
+  var form = document.getElementById("f");
+  var input = document.getElementById("q");
+  var statusEl = document.getElementById("status");
+  var results = document.getElementById("results");
+  var updaters = [];
+  var TR = null;
+
+  // ---------- ปรับขนาดตัวอักษร ----------
+  var scale = 1;
+  try { scale = parseFloat(localStorage.getItem("labelScale")) || 1; } catch (e) {}
+  function applyScale() {
+    scale = Math.min(1.5, Math.max(0.9, scale));
+    document.documentElement.style.setProperty("--scale", scale);
+    try { localStorage.setItem("labelScale", String(scale)); } catch (e) {}
+  }
+  applyScale();
+  document.getElementById("bigger").addEventListener("click", function () { scale += 0.1; applyScale(); });
+  document.getElementById("smaller").addEventListener("click", function () { scale -= 0.1; applyScale(); });
+
+  // ---------- ตัวช่วยทั่วไป ----------
+  function first(arr) { return Array.isArray(arr) && arr.length ? String(arr[0]) : ""; }
+  function field(r, f) { return Array.isArray(r[f]) ? r[f].join(" ") : ""; }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  // ข้อความที่ปุ่มแปลจะแปลให้ (data-tx)
+  function tx(cls, text, tag) {
+    var n = el(tag || "p", cls, text);
+    n.setAttribute("data-tx", "1");
+    return n;
+  }
+  function tidy(s) {
+    return s.replace(/[ \t]+/g, " ").replace(/\s*•\s*/g, "\n• ").replace(/\s{2,}/g, " ").trim();
+  }
+  function linesOf(text) {
+    return tidy(text).replace(/^(directions?|dosage and administration)\s*:?\s*/i, "")
+      .split(/\n|(?<=[.;])\s+/).map(function (x) { return x.trim(); })
+      .filter(function (x) { return x.length > 2; });
+  }
+  // ตัดประโยคแรกๆ จากต้นฉบับ ไม่ได้เรียบเรียงใหม่
+  function brief(text) {
+    var clean = tidy(text).replace(/^(uses?|purpose|indications?( and usage)?|directions?|active ingredients?)\s*:?\s*/i, "");
+    var parts = clean.match(/[^.!?\n]+[.!?]?/g) || [clean];
+    var out = "";
+    for (var i = 0; i < parts.length && i < 3; i++) {
+      if (out && (out + " " + parts[i]).length > 260) break;
+      out += (out ? " " : "") + parts[i].trim();
+    }
+    return out.length > 300 ? out.slice(0, 300).replace(/\s+\S*$/, "") + " …" : out;
+  }
+  function icon(code) {
+    var s = document.createElement("span");
+    s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[code] + "</svg>";
+    return s.firstChild;
+  }
+  function warnFlags(r) {
+    var text = WARN_FIELDS.map(function (f) { return field(r, f); }).join(" ");
+    return RULES.filter(function (rule) { return rule[2].test(text); });
+  }
+  function drugType(r) {
+    var t = ((r.openfda || {}).product_type || []).join(" ").toUpperCase();
+    return t.indexOf("OTC") >= 0 ? "otc" : t.indexOf("PRESCRIPTION") >= 0 ? "rx" : "";
+  }
+
+  // ---------- จับคู่อายุ / น้ำหนักกับบรรทัดขนาดยา ----------
+  function num(id) {
+    var v = parseFloat(document.getElementById(id).value);
+    return isFinite(v) && v >= 0 ? v : null;
+  }
+  function kgOf(v, unit) { return /kg/.test(unit) ? v : v / 2.2046; }
+  function ageRange(line) {
+    var m; line = line.toLowerCase();
+    if ((m = line.match(/(\d+)\s*(?:to|-|–)\s*(under\s*)?(\d+)\s*years?/))) return [+m[1], m[2] ? +m[3] : +m[3] + 1];
+    if ((m = line.match(/under\s*(\d+)\s*years?/))) return [0, +m[1]];
+    if ((m = line.match(/(\d+)\s*years?(?:\s*of age)?\s*(?:and over|and older|or older|or over)/))) return [+m[1], 200];
+    if (/\badults?\b/.test(line) && !/\bchild|infant/.test(line)) return [18, 200];
+    return null;
+  }
+  function weightRange(line) {
+    var m; line = line.toLowerCase();
+    if ((m = line.match(/(\d+(?:\.\d+)?)\s*(?:to|-|–)\s*(\d+(?:\.\d+)?)\s*(lbs?|pounds?|kg)/))) return [kgOf(+m[1], m[3]), kgOf(+m[2], m[3]) + 0.5];
+    if ((m = line.match(/under\s*(\d+(?:\.\d+)?)\s*(lbs?|pounds?|kg)/))) return [0, kgOf(+m[1], m[2])];
+    if ((m = line.match(/(?:over|above)\s*(\d+(?:\.\d+)?)\s*(lbs?|pounds?|kg)/))) return [kgOf(+m[1], m[2]), 500];
+    if ((m = line.match(/(\d+(?:\.\d+)?)\s*(lbs?|pounds?|kg)\s*(?:and over|or more|\+)/))) return [kgOf(+m[1], m[2]), 500];
+    return null;
+  }
+  function isHit(line, age, wt) {
+    var a = ageRange(line), w = weightRange(line);
+    if (a && age !== null && age >= a[0] && age < a[1]) return true;
+    if (w && wt !== null && wt >= w[0] && wt < w[1]) return true;
+    return false;
+  }
+  function doseFacts(line) {
+    var a = line.match(AMOUNT_RE), f = line.match(FREQ_RE), l = line.match(LIMIT_RE);
+    return { amount: a ? a[1] + " " + a[2] : "", freq: f ? f[1] : "", limit: l ? l[1].trim() : "", ask: ASK_RE.test(line) };
+  }
+  // ถ้าฉลากเขียนขนาดยาเป็น mg/kg จึงคำนวณจากน้ำหนักที่กรอก
+  function mgPerKg(line, wt) {
+    var m = line.match(/(\d+(?:\.\d+)?)\s*(?:(?:to|-|–)\s*(\d+(?:\.\d+)?)\s*)?mg\s*\/\s*kg/i);
+    if (!m || wt === null) return null;
+    return { text: m[0], lo: +m[1] * wt, hi: (m[2] ? +m[2] : +m[1]) * wt };
+  }
+  function fmt(n) { return String(Math.round(n * 10) / 10); }
+
+  function renderMine(mine, hitLines, age, wt, sex) {
+    mine.textContent = "";
+    if (age === null && wt === null && !sex) { mine.hidden = true; return; }
+    mine.hidden = false;
+    mine.appendChild(el("h4", "", "ปริมาณที่ตรงกับคุณ (อ่านจากฉลาก)"));
+    var prof = [age !== null ? "อายุ " + age + " ปี" : "", wt !== null ? "น้ำหนัก " + wt + " กก." : "",
+      sex ? (sex === "f" ? "หญิง" : "ชาย") : ""].filter(Boolean).join(" · ");
+    mine.appendChild(el("p", "muted", "ข้อมูลที่กรอก: " + prof));
+    if (!hitLines.length) {
+      mine.appendChild(el("p", "", "ไม่พบบรรทัดในฉลากที่ตรงกับอายุ/น้ำหนักนี้ชัดเจน ให้อ่านทุกบรรทัดด้านล่างและสอบถามเภสัชกร"));
+    }
+    hitLines.slice(0, 3).forEach(function (l) {
+      var row = el("div", "mrow");
+      var f = doseFacts(l), facts = el("div", "facts");
+      if (f.amount) facts.appendChild(el("span", "fact", "ครั้งละ " + f.amount));
+      if (f.freq) facts.appendChild(el("span", "fact", f.freq));
+      if (f.limit) facts.appendChild(el("span", "fact", "ข้อจำกัด: " + f.limit));
+      if (f.ask) facts.appendChild(el("span", "fact ask", "ฉลากให้ปรึกษาแพทย์ก่อน"));
+      if (facts.childNodes.length) row.appendChild(facts);
+      row.appendChild(tx("", l));
+      var c = mgPerKg(l, wt);
+      if (c) {
+        var range = c.lo === c.hi ? fmt(c.lo) : fmt(c.lo) + "–" + fmt(c.hi);
+        row.appendChild(el("p", "calc", "คำนวณจากฉลาก (" + c.text + ") น้ำหนัก " + fmt(wt) + " กก. ≈ " + range + " mg ต่อครั้ง ถ้าไม่ตรงกับที่แพทย์สั่ง ให้ยึดตามแพทย์"));
+      }
+      mine.appendChild(row);
+    });
+    if (sex) {
+      mine.appendChild(el("p", "muted", "ฉลากส่วนใหญ่ไม่แยกขนาดยาตามเพศ" +
+        (sex === "f" ? " แต่ถ้าตั้งครรภ์หรือให้นมบุตร ให้ดูหัวข้อตั้งครรภ์/ให้นมบุตรในหมวดข้อควรระวัง และปรึกษาแพทย์ก่อนใช้ยา" : "")));
+    }
+    if ((age !== null && age < 12) || (wt !== null && wt < 40)) {
+      mine.appendChild(el("p", "sos", "ผู้ใช้ยาเป็นเด็กหรือตัวเล็ก ให้ผู้ใหญ่ตรวจฉลากบนกล่องและสอบถามแพทย์หรือเภสัชกรก่อนให้ยา"));
+    }
+  }
+
+  // ---------- แปลภาษา ----------
+  // ใช้ตัวแปลในเบราว์เซอร์ (Chrome รุ่นใหม่) ถ้าไม่มี เปิด Google Translate ให้
+  function getTranslator() {
+    if (typeof self.Translator === "undefined") return Promise.resolve(null);
+    var opts = { sourceLanguage: "en", targetLanguage: "th" };
+    return self.Translator.availability(opts).then(function (a) {
+      return a === "unavailable" ? null : self.Translator.create(opts);
+    }).catch(function () { return null; });
+  }
+  function translateNodes(root) {
+    var nodes = Array.prototype.slice.call(root.querySelectorAll("[data-tx]")).filter(function (n) { return n.dataset.orig === undefined; });
+    var chain = Promise.resolve();
+    nodes.forEach(function (n) {
+      chain = chain.then(function () {
+        var t = n.textContent;
+        return TR.translate(t).then(function (out) { n.dataset.orig = t; n.textContent = out; }).catch(function () {});
+      });
+    });
+    return chain;
+  }
+  function translateCard(body, btn) {
+    if (body.dataset.th === "1") {
+      Array.prototype.forEach.call(body.querySelectorAll("[data-tx]"), function (n) {
+        if (n.dataset.orig !== undefined) { n.textContent = n.dataset.orig; delete n.dataset.orig; }
+      });
+      body.dataset.th = "0";
+      btn.textContent = "แปลเป็นไทย";
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "กำลังแปล…";
+    var ready = TR ? Promise.resolve(TR) : getTranslator().then(function (t) { TR = t; return t; });
+    ready.then(function (tr) {
+      var active = body.querySelector(".panel:not([hidden])");
+      if (!tr) {
+        var text = Array.prototype.map.call(active.querySelectorAll("[data-tx]"), function (n) { return n.textContent; }).join("\n").slice(0, 1800);
+        statusEl.textContent = "เบราว์เซอร์นี้ไม่มีตัวแปลในเครื่อง จึงเปิด Google Translate ในแท็บใหม่ให้ (ข้อความหมวดนี้จะถูกส่งไปที่ Google)";
+        window.open("https://translate.google.com/?sl=en&tl=th&op=translate&text=" + encodeURIComponent(text), "_blank", "noopener");
+        btn.disabled = false;
+        btn.textContent = "แปลเป็นไทย";
+        return null;
+      }
+      return translateNodes(active).then(function () {
+        body.dataset.th = "1";
+        btn.disabled = false;
+        btn.textContent = "ดูต้นฉบับ";
+      });
+    });
+  }
+
+  // ---------- ส่วนประกอบของแต่ละหมวด ----------
+  // หัวข้อที่อ่านยาว: ย่อไว้ก่อน กด "อ่านต่อ" เพื่อขยาย
+  function section(label, text, kind) {
+    var box = el("div", "sec" + (kind ? " " + kind : ""));
+    box.appendChild(el("div", "label", label));
+    var clean = tidy(text);
+    var p = tx("", clean);
+    box.appendChild(p);
+    if (clean.length > LIMIT) {
+      var short = clean.slice(0, LIMIT).replace(/\s+\S*$/, "") + " …";
+      p.textContent = short;
+      var btn = el("button", "more", "อ่านต่อ");
+      btn.type = "button";
+      var open = false;
+      btn.addEventListener("click", function () {
+        open = !open;
+        delete p.dataset.orig;
+        p.textContent = open ? clean : short;
+        btn.textContent = open ? "ย่อลง" : "อ่านต่อ";
+      });
+      box.appendChild(btn);
+    }
+    return box;
+  }
+  function panel() { return el("div", "panel"); }
+  function head(text) { return el("h3", "ph", text); }
+
+  function panelOverview(r) {
+    var p = panel();
+    var t = drugType(r);
+    p.appendChild(el("span", "pill" + (t === "rx" ? " rx" : ""),
+      t === "otc" ? "ยาที่ซื้อเองได้ในสหรัฐฯ (OTC)" : t === "rx" ? "ยาที่ต้องมีใบสั่งแพทย์ในสหรัฐฯ (Rx)" : "ฉลากไม่ระบุประเภทการจำหน่าย"));
+    var rows = [["ใช้เพื่ออะไร", first(r.purpose)], ["ข้อบ่งใช้", first(r.indications_and_usage)], ["ตัวยาสำคัญ", first(r.active_ingredient)]]
+      .filter(function (x) { return x[1]; });
+    if (rows.length > 1 && rows[0][0] === "ใช้เพื่ออะไร" && rows[1][0] === "ข้อบ่งใช้" && brief(rows[0][1]) === brief(rows[1][1])) rows.splice(1, 1);
+    if (!rows.length) p.appendChild(el("p", "muted", "ฉลากนี้ไม่มีหัวข้อข้อบ่งใช้ ลองดูแท็บ ฉบับเต็ม"));
+    rows.forEach(function (x) {
+      var row = el("div", "row");
+      row.appendChild(el("b", "", x[0]));
+      row.appendChild(tx("", brief(x[1]), "span"));
+      p.appendChild(row);
+    });
+    p.appendChild(el("small", "hint", "ตัดมาจากประโยคแรกของฉลากภาษาอังกฤษ ไม่ใช่การเรียบเรียงใหม่ อ่านละเอียดได้ที่แท็บ ฉบับเต็ม"));
+    return p;
+  }
+
+  function panelUse(r) {
+    var p = panel();
+    var lines = first(r.dosage_and_administration) ? linesOf(first(r.dosage_and_administration)) : [];
+    p.appendChild(head("ควรทานตอนไหน"));
+    var tl = lines.filter(function (l) { return TIMING.test(l); }).slice(0, 6);
+    if (tl.length) tl.forEach(function (l) { p.appendChild(tx("dline", l)); });
+    else p.appendChild(el("p", "muted", "ฉลากไม่ได้ระบุเวลาหรือความถี่ที่ชัดเจน"));
+
+    p.appendChild(head("ขนาดยาตามอายุและน้ำหนัก"));
+    if (!lines.length) {
+      p.appendChild(el("p", "muted", "ฉลากไม่มีหัวข้อขนาดและวิธีใช้"));
+      return p;
+    }
+    var info = el("p", "muted");
+    p.appendChild(info);
+    var mine = el("div", "mine");
+    mine.hidden = true;
+    p.appendChild(mine);
+    var nodes = lines.map(function (l) { var n = tx("dline", l); p.appendChild(n); return n; });
+    p.appendChild(el("small", "hint", "ไฮไลต์อัตโนมัติจากตัวเลขอายุ/น้ำหนักในฉลาก อาจคลาดเคลื่อน ขนาดยาต่างกันตามผลิตภัณฑ์และยี่ห้อ โดยเฉพาะยาเด็ก ให้ยึดฉลากบนกล่องจริงและสอบถามแพทย์หรือเภสัชกร ห้ามคำนวณเอง"));
+    var update = function () {
+      var age = num("age"), wt = num("wt"), sex = document.getElementById("sex").value, hitLines = [];
+      lines.forEach(function (l, i) {
+        var hit = isHit(l, age, wt);
+        nodes[i].className = "dline" + (hit ? " hit" : "");
+        if (hit) hitLines.push(l);
+      });
+      if (age === null && wt === null) info.textContent = "เปิดช่อง ✦ กรอกอายุ น้ำหนัก เพศ ด้านบน เพื่อไฮไลต์บรรทัดที่ตรงกับผู้ใช้ยา";
+      else info.textContent = hitLines.length ? "ไฮไลต์ " + hitLines.length + " บรรทัดที่น่าจะตรงกับอายุ/น้ำหนักที่กรอก" : "ไม่พบบรรทัดที่ตรงชัดเจน ให้อ่านทุกบรรทัดและสอบถามเภสัชกร";
+      renderMine(mine, hitLines, age, wt, sex);
+    };
+    updaters.push(update);
+    update();
+    return p;
+  }
+
+  function panelWarn(r, flags) {
+    var p = panel();
+    p.appendChild(head("ข้อควรระวังที่พบในฉลาก"));
+    if (flags.length) {
+      var grid = el("div", "grid");
+      flags.forEach(function (f) {
+        var b = el("div", "badge");
+        var ic = el("span", "ic");
+        ic.appendChild(icon(f[0]));
+        b.appendChild(ic);
+        b.appendChild(el("span", "", f[1]));
+        grid.appendChild(b);
+      });
+      p.appendChild(grid);
+      p.appendChild(el("small", "hint", "ตรวจจับจากคำสำคัญในฉลากอัตโนมัติ อาจไม่ครบทุกข้อ โปรดอ่านข้อความฉลากด้านล่างเสมอ"));
+    } else {
+      p.appendChild(el("p", "muted", "ระบบไม่พบคำเตือนกลุ่มที่จับได้ ให้อ่านข้อความฉลากด้านล่างเสมอ"));
+    }
+    var any = false;
+    WARN_SECTIONS.forEach(function (s) {
+      var text = first(r[s[0]]);
+      if (!text) return;
+      p.appendChild(section(s[1], text, s[2] ? "warn" : ""));
+      any = true;
+    });
+    if (!any) p.appendChild(el("p", "muted", "ฉลากนี้ไม่มีหัวข้อคำเตือนที่แสดงได้"));
+    return p;
+  }
+
+  function panelIx(r) {
+    var p = panel();
+    var pool = IX_FIELDS.map(function (f) { return field(r, f); }).join(" ");
+    var cats = IX_RULES.filter(function (x) { return x[1].test(pool); });
+    p.appendChild(head("ไม่ควรทานคู่กับ"));
+    if (cats.length) {
+      var grid = el("div", "grid");
+      cats.forEach(function (c) {
+        var b = el("div", "badge");
+        var ic = el("span", "ic");
+        ic.appendChild(icon("mix"));
+        b.appendChild(ic);
+        b.appendChild(el("span", "", c[0]));
+        grid.appendChild(b);
+      });
+      p.appendChild(grid);
+    } else {
+      p.appendChild(el("p", "muted", "ฉลากนี้ไม่ได้ระบุกลุ่มยาที่ห้ามใช้ร่วมกันอย่างชัดเจน"));
+    }
+    var lines = linesOf(pool).filter(function (l) { return IX_LINE.test(l); }).slice(0, 8);
+    if (lines.length) {
+      p.appendChild(head("ข้อความในฉลาก"));
+      lines.forEach(function (l) { p.appendChild(tx("dline", l)); });
+    }
+    p.appendChild(el("small", "hint", "ตรวจจับจากคำสำคัญ อาจไม่ครบทุกข้อ ถ้ากินยาประจำหรืออาหารเสริมอยู่ ให้แจ้งแพทย์หรือเภสัชกรก่อนใช้ยาใหม่ทุกครั้ง"));
+    return p;
+  }
+
+  function panelOd(r) {
+    var p = panel();
+    p.appendChild(head("ถ้าใช้เกินขนาด อาจมีอาการอะไร"));
+    var odText = first(r.overdosage), shown;
+    if (odText) {
+      shown = linesOf(odText).slice(0, 8);
+    } else {
+      var pool = WARN_FIELDS.concat(["dosage_and_administration"]).map(function (f) { return field(r, f); }).join(" ");
+      shown = linesOf(pool).filter(function (l) { return OD_HINT.test(l); }).slice(0, 4);
+    }
+    if (shown.length) shown.forEach(function (l) { p.appendChild(tx("dline", l)); });
+    else p.appendChild(el("p", "muted", "ฉลากนี้ไม่ได้ระบุอาการเมื่อใช้เกินขนาด"));
+    p.appendChild(el("p", "sos", "สงสัยว่าใช้ยาเกินขนาด ให้รีบไปโรงพยาบาลหรือโทร 1669 ทันที"));
+    p.appendChild(el("small", "hint", odText ? "ตัดมาจากหัวข้อ Overdosage ของฉลาก" : "ฉลากไม่มีหัวข้อ Overdosage จึงดึงประโยคที่เกี่ยวข้องจากหัวข้อคำเตือนและวิธีใช้"));
+    return p;
+  }
+
+  function link(cls, text, href) {
+    var a = el("a", cls, text);
+    a.href = href;
+    a.target = "_blank";
+    a.rel = "noopener";
+    return a;
+  }
+  function panelBuy(r) {
+    var p = panel();
+    var of = r.openfda || {};
+    var generic = first(of.generic_name), brand = first(of.brand_name), t = drugType(r);
+    p.appendChild(head("ประเภทยา"));
+    p.appendChild(el("p", "", t === "otc" ? "ในสหรัฐฯ จัดเป็นยาที่ซื้อเองได้ (OTC)" : t === "rx" ? "ในสหรัฐฯ เป็นยาที่ต้องมีใบสั่งแพทย์ (Rx)" : "ฉลากไม่ระบุประเภทการจำหน่าย"));
+    p.appendChild(el("p", "muted", "การแบ่งประเภทยาในประเทศไทยอาจต่างจากสหรัฐฯ และยี่ห้อนี้อาจไม่มีขายในไทย"));
+    p.appendChild(head("ชื่อที่ใช้ถามเภสัชกร"));
+    p.appendChild(el("p", "", [generic, brand && brand !== generic ? "ชื่อการค้าในฉลาก: " + brand : ""].filter(Boolean).join(" · ") || "ไม่พบชื่อในฉลาก"));
+    p.appendChild(head("หาซื้อที่ไหน"));
+    var btns = el("div", "btns");
+    btns.appendChild(link("btn", "หาร้านขายยาใกล้ฉัน", "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent("ร้านขายยา")));
+    if (generic) btns.appendChild(link("btn alt", "ค้นหายานี้ในประเทศไทย", "https://www.google.com/search?q=" + encodeURIComponent(generic + " ยา ประเทศไทย")));
+    p.appendChild(btns);
+    var tips = el("ul", "tips");
+    ["ร้านขายยาที่มีเภสัชกรประจำร้าน ใช้ซื้อยาที่ไม่ต้องมีใบสั่งแพทย์ และขอคำแนะนำได้",
+      "ยาที่ต้องมีใบสั่งแพทย์ ต้องให้แพทย์ที่โรงพยาบาลหรือคลินิกสั่งให้",
+      "ก่อนซื้อ ตรวจเลขทะเบียนตำรับยาและวันหมดอายุบนกล่องทุกครั้ง"].forEach(function (t2) { tips.appendChild(el("li", "", t2)); });
+    p.appendChild(tips);
+    p.appendChild(el("small", "hint", "ปุ่มด้านบนเปิดเว็บ Google ในแท็บใหม่ หน้านี้ไม่ได้ระบุว่าร้านใดมียานี้ขายอยู่"));
+    return p;
+  }
+
+  function panelFull(r) {
+    var p = panel();
+    var any = false;
+    FULL_SECTIONS.forEach(function (s) {
+      var text = first(r[s[0]]);
+      if (!text) return;
+      p.appendChild(section(s[1], text, ""));
+      any = true;
+    });
+    if (!any) p.appendChild(el("p", "muted", "ฉลากนี้ไม่มีหัวข้อที่แสดงได้"));
+    return p;
+  }
+
+  // ---------- การ์ดยา ----------
+  function selectTab(body, tabs, defs, i) {
+    defs.forEach(function (def, j) {
+      def[1].hidden = j !== i;
+      tabs.children[j].setAttribute("aria-selected", j === i ? "true" : "false");
+    });
+    if (body.dataset.th === "1" && TR) translateNodes(defs[i][1]);
+  }
+
+  function renderItem(r, open) {
+    var of = r.openfda || {};
+    var d = el("details", "item");
+    if (open) d.open = true;
+
+    var s = el("summary");
+    var sum = el("div", "sum");
+    sum.appendChild(el("div", "name", first(of.brand_name) || "(ไม่ระบุชื่อการค้า)"));
+    if (first(of.generic_name)) sum.appendChild(el("div", "generic", first(of.generic_name)));
+    var tags = el("div", "tags");
+    [first(of.route), first(of.manufacturer_name)].forEach(function (t) { if (t) tags.appendChild(el("span", "tag-pill", t)); });
+    if (r.effective_time) {
+      var t = String(r.effective_time);
+      tags.appendChild(el("span", "tag-pill", "ปรับปรุง " + t.slice(0, 4) + "-" + t.slice(4, 6) + "-" + t.slice(6, 8)));
+    }
+    if (tags.childNodes.length) sum.appendChild(tags);
+    var flags = warnFlags(r);
+    if (flags.length) {
+      var minis = el("div", "minis");
+      flags.forEach(function (f) {
+        var m = el("span", "mini");
+        m.title = f[1];
+        m.appendChild(icon(f[0]));
+        minis.appendChild(m);
+      });
+      sum.appendChild(minis);
+    }
+    s.appendChild(sum);
+    d.appendChild(s);
+
+    var body = el("div", "body");
+    var bar = el("div", "bar");
+    var tbtn = el("button", "tbtn", "แปลเป็นไทย");
+    tbtn.type = "button";
+    tbtn.addEventListener("click", function () { translateCard(body, tbtn); });
+    bar.appendChild(tbtn);
+    bar.appendChild(el("small", "muted", "แปลโดยเครื่อง อาจคลาดเคลื่อน"));
+    body.appendChild(bar);
+
+    var defs = [
+      ["ภาพรวม", panelOverview(r)], ["วิธีใช้", panelUse(r)], ["ข้อควรระวัง", panelWarn(r, flags)],
+      ["ไม่ควรทานคู่กับ", panelIx(r)], ["ใช้เกินขนาด", panelOd(r)], ["หาซื้อ", panelBuy(r)], ["ฉบับเต็ม", panelFull(r)]
+    ];
+    var tabs = el("div", "tabs");
+    tabs.setAttribute("role", "tablist");
+    defs.forEach(function (def, i) {
+      var b = el("button", "tab", def[0]);
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", i === 0 ? "true" : "false");
+      def[1].hidden = i !== 0;
+      b.addEventListener("click", function () { selectTab(body, tabs, defs, i); });
+      tabs.appendChild(b);
+    });
+    body.appendChild(tabs);
+    defs.forEach(function (def) { body.appendChild(def[1]); });
+    d.appendChild(body);
+    return d;
+  }
+
+  // ---------- ค้นหา ----------
+  function search(term) {
+    term = term.replace(/["\\]/g, "").trim();
+    if (!term) return;
+    results.textContent = "";
+    updaters.length = 0;
+    statusEl.textContent = "กำลังค้นหา…";
+    var query = '(openfda.brand_name:"' + term + '" OR openfda.generic_name:"' + term + '")';
+    var url = "https://api.fda.gov/drug/label.json?search=" + encodeURIComponent(query) + "&limit=8";
+
+    fetch(url).then(function (res) {
+      if (res.status === 404) return { results: [] };
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    }).then(function (data) {
+      var list = data.results || [];
+      if (!list.length) {
+        statusEl.textContent = "ไม่พบฉลากยาสำหรับ \"" + term + "\" ลองใช้ชื่อสามัญภาษาอังกฤษ เช่น ibuprofen";
+        return;
+      }
+      statusEl.textContent = "พบ " + list.length + " ฉลาก กดที่ชื่อยาเพื่อเปิดหรือปิด แล้วเลือกหมวดที่อยากรู้";
+      list.forEach(function (r, i) { results.appendChild(renderItem(r, i === 0)); });
+    }).catch(function (err) {
+      statusEl.textContent = "เชื่อมต่อ openFDA ไม่สำเร็จ (" + err.message + ") ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง";
+    });
+  }
+
+  ["age", "wt", "sex"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", function () { updaters.forEach(function (fn) { fn(); }); });
+  });
+  form.addEventListener("submit", function (e) { e.preventDefault(); search(input.value); });
+  document.querySelectorAll("[data-q]").forEach(function (b) {
+    b.addEventListener("click", function () { input.value = b.dataset.q; search(b.dataset.q); });
+  });
+</script>
+</body>
+</html>
